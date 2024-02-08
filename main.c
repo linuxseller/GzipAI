@@ -7,7 +7,6 @@
 #define SVFMT "%.*s"
 #define SVVARG(sv) sv.size, sv.data
 
-
 typedef struct {
     char *data;
     int size;
@@ -24,12 +23,18 @@ Sv nextCSVEntry(Stream *stream)
     Sv sv = {0};
     int start_pos = stream->position;
     sv.data = stream->data+stream->position;
-    while(stream->data[stream->position++]!=','||stream->data[stream->position++]){
-        if(stream->data[stream->position++]=='"'){
-            while(stream->data[stream->position++]!=',');
+    while(stream->data[stream->position] != ',' && stream->data[stream->position] != '\n'){
+        stream->position++;
+        if(stream->data[stream->position]=='"'){
+            stream->position++;
+            while(stream->data[stream->position]!='"'){
+                stream->position++;
+                printf("##,");
+            }
         }
     }
     sv.size=stream->position-start_pos;
+    stream->position++;
     return sv;
 }
 
@@ -47,16 +52,21 @@ int main(void)
     Stream text_data_stream = {.data=text_data, .size=file_size, .position=0};
     // Headers
     printf("--- Headers ---\n");
-    for (int i = 1; i < 3; i++) {
+    for (int i = 1; i < 4; i++) {
         Sv sv = nextCSVEntry(&text_data_stream);
-        printf(SVFMT" : ", SVVARG(sv));
+        printf(SVFMT" | ", SVVARG(sv));
     }
     puts("");
     // Content
     printf("--- Content ---\n");
-    for (int i = 1; i < 1; i++) {
-        Sv sv = nextCSVEntry(&text_data_stream);
-        printf(SVFMT" : ", SVVARG(sv));
+    for (int i = 0; i < 3; i++) {
+        Sv class = nextCSVEntry(&text_data_stream);
+        printf(SVFMT" : ", SVVARG(class));
+        Sv title = nextCSVEntry(&text_data_stream);
+        printf(SVFMT" : ", SVVARG(title));
+        Sv brief = nextCSVEntry(&text_data_stream);
+        printf(SVFMT" : ", SVVARG(brief));
+        puts("");
     }
     return 0;
 }
